@@ -1,0 +1,30 @@
+bindings:
+- action:
+    config: {}
+    file: modules/actions/sound_beep.py
+  filter:
+    cooldown: 0.8
+    trigger_on: rising
+  gesture:
+    config: {}
+    file: modules/gestures/recorded/right.json
+  id: right_1
+  name: right -> sound_beep
+- action:
+    config: {}
+    file: modules/actions/sound_beep.py
+  filter:
+    cooldown: 0.8
+    trigger_on: rising
+  gesture:
+    config: {}
+    file: modules/gestures/recorded/vi.json
+  id: vi_2
+  name: vi -> sound_beep
+settings:
+  camera_id: 0
+  flip_horizontal: true
+  fps_limit: 30
+  preview_window: true
+  show_landmarks: true
+version: '1.0'

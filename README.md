@@ -1,7 +1,5 @@
 # 🖐️ V-Pose Combine Studio
 
-Автор проєкту: М. Корольков
-
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![MediaPipe](https://img.shields.io/badge/MediaPipe-Tasks%20Vision-007FFF?style=flat&logo=google&logoColor=white)](https://developers.google.com/mediapipe)
 [![OpenCV](https://img.shields.io/badge/OpenCV-Computer%20Vision-5C3EE8?style=flat&logo=opencv&logoColor=white)](https://opencv.org/)
@@ -14,7 +12,6 @@ V-Pose Combine Studio — шкільний проєкт, який спрощує
 - Автор проєкту: М. Корольков
 - Проєкт поширюється за ліцензією MIT.
 - Дозволяється використання, копіювання, модифікація, поширення та розповсюдження коду та документації за умовами MIT License.
-- При використанні частин проєкту або його коду в навчальних, дослідницьких або комерційних цілях рекомендується зберігати посилання на автора: © 2026 М. Корольков.
 
 Це модульний конвеєр комп'ютерного зору для розпізнавання людських жестів, поз та міміки в реальному часі.
 

@@ -1,0 +1,2 @@
+# Placeholder to keep models_cache directory tracked in Git.
+# Actual .task models are downloaded on demand by core/model_manager.py

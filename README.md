@@ -39,8 +39,8 @@
 ### 1. Клонування та встановлення залежностей
 
 ```bash
-git clone https://github.com/your-username/vpose-combine.git
-cd vpose-combine
+git clone https://github.com/Mazqwertyuio/pose_detector.git
+cd pose_detector
 
 # Створення віртуального середовища (рекомендовано)
 python -m venv venv

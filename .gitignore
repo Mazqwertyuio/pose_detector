@@ -51,9 +51,9 @@ ehthumbs_vista.db
 [Dd]esktop.ini
 .DS_Store
 
-# MediaPipe AI Models Cache (auto-downloaded on demand)
+# AI Models and Exports
+models/*.onnx
 models_cache/*.task
 !models_cache/.gitkeep
-
-# Logs and runtime dumps
+exports/
 *.log

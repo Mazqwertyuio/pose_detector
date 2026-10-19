@@ -15,18 +15,59 @@ from core.visualizer import Visualizer
 from modules.sources.webcam import VideoSource as DefaultWebcamSource
 
 
+class VirtualBiometricDetector:
+    """Віртуальний детектор для прив'язки подій Face ID, Voice ID або звуків YAMNet до дій у pipeline.yaml."""
+    def __init__(self, spec: str):
+        self.spec = spec  # наприклад: "face:Max", "yamnet:Clapping", "voice:max"
+        parts = spec.split(":", 1)
+        self.kind = parts[0].lower()
+        self.target = parts[1].strip() if len(parts) > 1 else ""
+        self.requires: List[str] = []
+
+    def evaluate_from_engines(self, frame, face_engine, audio_mgr) -> DetectionResult:
+        if self.kind == "face" and face_engine is not None:
+            faces = face_engine.recognize(frame)
+            for f in faces:
+                if f.get("is_known") and (self.target == "*" or f.get("name", "").lower() == self.target.lower()):
+                    return DetectionResult(triggered=True, value=float(f.get("score", 1.0)), confidence=1.0)
+            return DetectionResult(triggered=False, value=0.0)
+
+        if self.kind == "yamnet" and audio_mgr is not None and audio_mgr.running:
+            snap = audio_mgr.get_snapshot()
+            for ev in snap.get("top_events", []):
+                if self.target.lower() in (ev.get("name", "").lower(), ev.get("label", "").lower()):
+                    if ev.get("score", 0.0) >= 0.15:
+                        return DetectionResult(triggered=True, value=float(ev.get("score", 1.0)), confidence=1.0)
+            return DetectionResult(triggered=False, value=0.0)
+
+        if self.kind == "voice" and audio_mgr is not None and audio_mgr.running:
+            spk = audio_mgr.get_snapshot().get("speaker", {})
+            if spk.get("is_verified") and (self.target == "*" or spk.get("name", "").lower() == self.target.lower()):
+                return DetectionResult(triggered=True, value=float(spk.get("similarity", 1.0)), confidence=1.0)
+            return DetectionResult(triggered=False, value=0.0)
+
+        return DetectionResult(triggered=False, value=0.0)
+
+
 class Binding:
-    """Зв'язка між конкретним жестом та дією з фільтрами."""
+    """Зв'язка між конкретним тригером (жест, обличчя, звук, голос) та дією з фільтрами."""
     def __init__(self, binding_cfg: Dict[str, Any]):
         self.id = binding_cfg.get("id", "unnamed_binding")
         self.name = binding_cfg.get("name", self.id)
 
-        # 1. Завантаження жесту
+        # 1. Завантаження тригера (жест або біометрична/звукова подія)
         gesture_cfg = binding_cfg["gesture"]
-        self.detector, self.requires, self.gesture_name = load_gesture_module(
-            gesture_cfg["file"],
-            gesture_cfg.get("config", {})
-        )
+        g_file = str(gesture_cfg.get("file", ""))
+        self.is_virtual = g_file.startswith(("face:", "yamnet:", "voice:"))
+        if self.is_virtual:
+            self.detector = VirtualBiometricDetector(g_file)
+            self.requires = []
+            self.gesture_name = g_file
+        else:
+            self.detector, self.requires, self.gesture_name = load_gesture_module(
+                g_file,
+                gesture_cfg.get("config", {})
+            )
 
         # 2. Фільтри
         filter_cfg = binding_cfg.get("filter", {})
@@ -85,6 +126,8 @@ class Engine:
         # Ініціалізація зв'язок
         self.bindings: List[Binding] = []
         required_models = set()
+        needs_face_engine = False
+        needs_audio_engine = False
 
         raw_bindings = self.config.get("bindings", [])
         if not raw_bindings:
@@ -95,6 +138,30 @@ class Engine:
             self.bindings.append(binding)
             for req in binding.requires:
                 required_models.add(req)
+            if binding.is_virtual:
+                if binding.detector.kind == "face":
+                    needs_face_engine = True
+                elif binding.detector.kind in ("yamnet", "voice"):
+                    needs_audio_engine = True
+
+        self.face_engine = None
+        if needs_face_engine:
+            try:
+                from core.face_engine import FaceEngine
+                self.face_engine = FaceEngine()
+                print("[Engine] Підключено модуль Face ID для мультимодальних зв'язок.")
+            except Exception as ex:
+                print(f"[Engine] Не вдалося завантажити FaceEngine: {ex}")
+
+        self.audio_mgr = None
+        if needs_audio_engine:
+            try:
+                from core.audio_engine import AudioStreamManager
+                self.audio_mgr = AudioStreamManager()
+                self.audio_mgr.start()
+                print("[Engine] Підключено мікрофонний потік YAMNet/Voice ID для мультимодальних зв'язок.")
+            except Exception as ex:
+                print(f"[Engine] Не вдалося запустити AudioStreamManager: {ex}")
 
         print(f"[Engine] Підключено зв'язок: {len(self.bindings)}")
         print(f"[Engine] Необхідні моделі для завантаження: {required_models}")
@@ -153,7 +220,12 @@ class Engine:
 
                 # 3. Виклик кожного підключеного детектора та обробка дій
                 for binding in self.bindings:
-                    det_result: DetectionResult = binding.detector.process(ctx)
+                    if binding.is_virtual:
+                        det_result: DetectionResult = binding.detector.evaluate_from_engines(
+                            frame, self.face_engine, self.audio_mgr
+                        )
+                    else:
+                        det_result: DetectionResult = binding.detector.process(ctx)
 
                     # Запис для віджетів HUD
                     active_gestures_hud.append({
@@ -232,6 +304,11 @@ class Engine:
                 frame_id += 1
 
         finally:
+            if getattr(self, "audio_mgr", None) is not None:
+                try:
+                    self.audio_mgr.stop()
+                except Exception:
+                    pass
             self.video_source.release()
             cv2.destroyAllWindows()
             self.model_manager.close()

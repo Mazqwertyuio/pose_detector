@@ -141,13 +141,48 @@ def record_pose_dialog(camera_id: int = 0, preset: Optional[Dict[str, Any]] = No
     }
     gesture_type = g_map.get(g_choice, "static")
 
-    print("\nОберіть частину тіла для відстеження:")
-    print("  [1] Кисть / пальці руки (hands)")
-    print("  [2] Обличчя / голова    (face)")
-    print("  [3] Тіло в повний зріст (pose)")
+    if gesture_type == "slider":
+        print("\n[УВАГА] Парадигма «Повзунок» (висота руки, горизонталь, щипок) працює ВИКЛЮЧНО для кисті (hands).")
+        print("Вибір обличчя та тіла автоматично заблоковано.")
+        model_type = "hands"
 
-    type_choice = _ask(preset, "model_choice", "Ваш вибір (1, 2 або 3, за замовчуванням 1): ").strip()
-    model_type = "face" if type_choice == "2" else ("pose" if type_choice == "3" else "hands")
+        print("\nОберіть режим повзунка:")
+        print("  [1] Висота руки по вертикалі (Y вгору/вниз -> 0% .. 100%)")
+        print("  [2] Позиція руки по горизонталі (X вліво/вправо -> 0% .. 100%)")
+        print("  [3] Щипок (дистанція між великим та вказівним пальцями)")
+        s_choice = _ask(preset, "slider_choice", "Ваш вибір (1-3, за замовчуванням 1): ").strip()
+        s_map = {"1": "height", "2": "horizontal", "3": "pinch"}
+        slider_mode = s_map.get(s_choice, "height")
+
+        out_dir = os.path.join("modules", "gestures", "recorded")
+        os.makedirs(out_dir, exist_ok=True)
+        out_file = os.path.join(out_dir, f"{gesture_name}.json")
+
+        payload = {
+            "name": gesture_name,
+            "model_type": model_type,
+            "gesture_type": gesture_type,
+            "slider_mode": slider_mode,
+            "created_at": time.time()
+        }
+        with open(out_file, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+
+        print("\n" + "=" * 65)
+        print("ПОВЗУНОК УСПІШНО ЗБЕРЕЖЕНО!")
+        print(f"Файл: {out_file}")
+        print(f"Парадигма: {gesture_type} (кисть руки, режим '{slider_mode}')")
+        print("Камера не потрібна: повзунок розраховується математично в реальному часі.")
+        print("=" * 65)
+        return out_file
+    else:
+        print("\nОберіть частину тіла для відстеження:")
+        print("  [1] Кисть / пальці руки (hands)")
+        print("  [2] Обличчя / голова    (face)")
+        print("  [3] Тіло в повний зріст (pose)")
+
+        type_choice = _ask(preset, "model_choice", "Ваш вибір (1, 2 або 3, за замовчуванням 1): ").strip()
+        model_type = "face" if type_choice == "2" else ("pose" if type_choice == "3" else "hands")
 
     out_dir = os.path.join("modules", "gestures", "recorded")
     os.makedirs(out_dir, exist_ok=True)
@@ -311,20 +346,6 @@ def record_pose_dialog(camera_id: int = 0, preset: Optional[Dict[str, Any]] = No
             payload["tolerance"] = 0.32
             payload["hold_duration"] = hold_sec
             payload["template_points"] = avg_pose.tolist()
-
-        # =================================================================
-        # 6. АНАЛОГОВИЙ КОНТРОЛЕР / ПОВЗУНОК
-        # =================================================================
-        elif gesture_type == "slider":
-            print("\nОберіть режим повзунка:")
-            print("  [1] Висота руки по вертикалі (Y вгору/вниз -> 0% .. 100%)")
-            print("  [2] Позиція руки по горизонталі (X вліво/вправо -> 0% .. 100%)")
-            print("  [3] Щипок (дистанція між великим та вказівним пальцями)")
-            s_choice = _ask(preset, "slider_choice", "Ваш вибір (1-3, за замовчуванням 1): ").strip()
-            s_map = {"1": "height", "2": "horizontal", "3": "pinch"}
-            slider_mode = s_map.get(s_choice, "height")
-
-            payload["slider_mode"] = slider_mode
 
         # ЗБЕРЕЖЕННЯ КОНФІГУРАЦІЇ
         with open(out_file, "w", encoding="utf-8") as f:

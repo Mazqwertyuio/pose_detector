@@ -201,7 +201,7 @@ class PoseStudioApp:
         self.rec_model = "hands"
         self.rec_params: Dict[str, Any] = dict(
             threshold=0.80, trans_time=0.9, hold_seconds=1.5, min_cycles=3,
-            axis_choice="1", slider_choice="1",
+            axis_choice="1", slider_choice="1", traj_time=1.0, period_window=1.0, min_amplitude=0.09,
         )
         self.rec_name = ""
 
@@ -297,8 +297,8 @@ class PoseStudioApp:
 
     def _bg_colors(self) -> List[str]:
         if self._is_dark():
-            return ["#070b18", "#120d26", "#07202b"]
-        return ["#f4f7ff", "#f6f1ff", "#e8faf7"]
+            return ["#090d16", "#0c111d", "#070a12"]
+        return ["#f8fafc", "#f1f5f9", "#e2e8f0"]
 
     def _on_key(self, e: ft.KeyboardEvent):
         if not e.ctrl:
@@ -367,31 +367,31 @@ class PoseStudioApp:
 
     def _shadow(self, lifted: bool = False, color: Optional[str] = None):
         return ft.BoxShadow(
-            blur_radius=34 if lifted else 18, spread_radius=0,
-            color=op(0.38 if lifted else 0.16, color or self.c1),
-            offset=ft.Offset(0, 14 if lifted else 6))
+            blur_radius=14 if lifted else 6, spread_radius=0,
+            color=op(0.18 if lifted else 0.06, color or self.c1),
+            offset=ft.Offset(0, 4 if lifted else 1))
 
     def _glass_border(self, lifted: bool = False, color: Optional[str] = None):
         if lifted:
-            return ft.Border.all(1.4, op(0.65, color or self.c1))
-        return ft.Border.all(1, op(0.14, ft.Colors.ON_SURFACE))
+            return ft.Border.all(1.2, op(0.55, color or self.c1))
+        return ft.Border.all(1, op(0.10, ft.Colors.ON_SURFACE))
 
-    def _glass(self, content: ft.Control, padding=18, radius=22, hover=True, blur=True,
+    def _glass(self, content: ft.Control, padding=16, radius=10, hover=True, blur=True,
                on_click=None, tint: Optional[str] = None, **kwargs) -> ft.Container:
         def on_hover(e):
             lifted = str(e.data).lower() == "true"
-            e.control.offset = ft.Offset(0, -0.012) if lifted else ft.Offset(0, 0)
+            e.control.offset = ft.Offset(0, -0.010) if lifted else ft.Offset(0, 0)
             e.control.shadow = self._shadow(lifted, tint)
             e.control.border = self._glass_border(lifted, tint)
             self._safe(e.control)
 
         return ft.Container(
             content=content, padding=padding, border_radius=radius,
-            bgcolor=op(0.52, ft.Colors.SURFACE_CONTAINER),
-            blur=ft.Blur(16, 16) if blur else None,
+            bgcolor=op(0.60 if self._is_dark() else 0.85, ft.Colors.SURFACE_CONTAINER_LOW),
+            blur=ft.Blur(10, 10) if blur else None,
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
             border=self._glass_border(False), shadow=self._shadow(False, tint),
-            animate=self._anim(260), animate_offset=self._anim(220, ft.AnimationCurve.EASE_OUT_CUBIC),
+            animate=self._anim(200), animate_offset=self._anim(180, ft.AnimationCurve.EASE_OUT_CUBIC),
             on_hover=on_hover if (hover and self.animations) else None,
             on_click=on_click, **kwargs)
 
@@ -405,45 +405,45 @@ class PoseStudioApp:
         except Exception:
             return ft.Text(value, size=size, weight=weight, color=self.c1)
 
-    def _icon_badge(self, icon, color: str, size=46, icon_size=24) -> ft.Container:
+    def _icon_badge(self, icon, color: str, size=40, icon_size=20) -> ft.Container:
         return ft.Container(
-            width=size, height=size, border_radius=size / 3.2, alignment=ft.Alignment.CENTER,
+            width=size, height=size, border_radius=8, alignment=ft.Alignment.CENTER,
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
             gradient=ft.LinearGradient(begin=ft.Alignment.TOP_LEFT, end=ft.Alignment.BOTTOM_RIGHT,
-                                       colors=[color, shift_hue(color, 0.1)]),
-            shadow=ft.BoxShadow(blur_radius=14, color=op(0.45, color), offset=ft.Offset(0, 5)),
+                                       colors=[color, shift_hue(color, 0.08)]),
+            shadow=ft.BoxShadow(blur_radius=8, color=op(0.30, color), offset=ft.Offset(0, 2)),
             content=ft.Icon(icon, color="white", size=icon_size))
 
     def _pill(self, text: str, color: str, icon=None) -> ft.Container:
         row: List[ft.Control] = []
         if icon:
-            row.append(ft.Icon(icon, size=13, color=color))
-        row.append(ft.Text(text, size=11, weight=ft.FontWeight.W_700, color=color))
+            row.append(ft.Icon(icon, size=12, color=color))
+        row.append(ft.Text(text, size=11, weight=ft.FontWeight.W_600, color=color, font_family="Consolas"))
         return ft.Container(
             content=ft.Row(tight=True, spacing=4, controls=row),
-            padding=ft.Padding.symmetric(horizontal=10, vertical=4), border_radius=20,
-            bgcolor=op(0.14, color), border=ft.Border.all(1, op(0.35, color)))
+            padding=ft.Padding.symmetric(horizontal=8, vertical=3), border_radius=6,
+            bgcolor=op(0.12, color), border=ft.Border.all(1, op(0.28, color)))
 
     def _gradient_button(self, label: str, icon, on_click, colors: Optional[List[str]] = None,
-                         height=54) -> ft.Container:
+                         height=46) -> ft.Container:
         colors = colors or [self.c1, self.c2]
 
         def on_hover(e):
             hot = str(e.data).lower() == "true"
-            e.control.scale = 1.035 if hot else 1
+            e.control.scale = 1.02 if hot else 1
             self._safe(e.control)
 
         return ft.Container(
-            height=height, padding=ft.Padding.symmetric(horizontal=26), border_radius=height / 2.6,
+            height=height, padding=ft.Padding.symmetric(horizontal=20), border_radius=8,
             alignment=ft.Alignment.CENTER, clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
             gradient=ft.LinearGradient(begin=ft.Alignment.CENTER_LEFT, end=ft.Alignment.CENTER_RIGHT, colors=colors),
-            shadow=ft.BoxShadow(blur_radius=22, color=op(0.42, colors[0]), offset=ft.Offset(0, 8)),
-            animate=self._anim(250), animate_scale=self._anim(220, ft.AnimationCurve.EASE_OUT_BACK),
-            animate_opacity=self._anim(250),
+            shadow=ft.BoxShadow(blur_radius=12, color=op(0.30, colors[0]), offset=ft.Offset(0, 4)),
+            animate=self._anim(200), animate_scale=self._anim(180, ft.AnimationCurve.EASE_OUT),
+            animate_opacity=self._anim(200),
             on_hover=on_hover if self.animations else None, on_click=on_click,
-            content=ft.Row(tight=True, alignment=ft.MainAxisAlignment.CENTER, spacing=10, controls=[
-                ft.Icon(icon, color="white", size=22),
-                ft.Text(label, color="white", size=15, weight=ft.FontWeight.W_700)]))
+            content=ft.Row(tight=True, alignment=ft.MainAxisAlignment.CENTER, spacing=8, controls=[
+                ft.Icon(icon, color="white", size=18),
+                ft.Text(label, color="white", size=14, weight=ft.FontWeight.W_700)]))
 
     def _section_title(self, text: str, icon=None, subtitle: Optional[str] = None) -> ft.Control:
         left: List[ft.Control] = []
@@ -489,14 +489,14 @@ class PoseStudioApp:
     def _build_ui(self):
         w = self.page.width or 1300
         h = self.page.height or 800
-        orb_specs = [(self.c1, 520, 0.05, 0.05), (self.c2, 460, 0.60, 0.40), ("#38bdf8", 380, 0.30, 0.65)]
+        orb_specs = [(self.c1, 400, 0.05, 0.05), (self.c2, 340, 0.60, 0.40), ("#38bdf8", 280, 0.30, 0.65)]
         self.orbs = []
         for color, size, fx, fy in orb_specs:
             self.orbs.append(ft.Container(
                 width=size, height=size, border_radius=size / 2, left=w * fx, top=h * fy,
                 visible=bool(self.settings["orbs"]),
-                animate_position=ft.Animation(11000, ft.AnimationCurve.EASE_IN_OUT),
-                gradient=ft.RadialGradient(colors=[op(0.34 if self._is_dark() else 0.26, color), op(0, color)])))
+                animate_position=ft.Animation(14000, ft.AnimationCurve.EASE_IN_OUT),
+                gradient=ft.RadialGradient(colors=[op(0.12 if self._is_dark() else 0.08, color), op(0, color)])))
 
         self.bg = ft.Container(
             left=0, top=0, right=0, bottom=0, animate=ft.Animation(800, ft.AnimationCurve.EASE_IN_OUT),
@@ -549,15 +549,15 @@ class PoseStudioApp:
         self.collapse_icon = ft.Icon(ft.Icons.KEYBOARD_DOUBLE_ARROW_LEFT, size=20,
                                      color=ft.Colors.ON_SURFACE_VARIANT)
         self.collapse_btn = ft.Container(
-            content=ft.Row(spacing=12, controls=[self.collapse_icon]), padding=14, border_radius=14, ink=True,
+            content=ft.Row(spacing=12, controls=[self.collapse_icon]), padding=10, border_radius=8, ink=True,
             tooltip="Згорнути / розгорнути панель", on_click=self._toggle_sidebar)
         self._apply_collapse_icon()
 
         return ft.Container(
             width=76 if collapsed else 238, animate=ft.Animation(380, ft.AnimationCurve.EASE_OUT_CUBIC),
-            padding=ft.Padding(14, 22, 14, 16), bgcolor=op(0.5, ft.Colors.SURFACE_CONTAINER_LOW),
-            blur=ft.Blur(18, 18), border=ft.Border(right=ft.BorderSide(1, op(0.12, ft.Colors.ON_SURFACE))),
-            content=ft.Column(spacing=6, controls=[
+            padding=ft.Padding(12, 18, 12, 14), bgcolor=op(0.5, ft.Colors.SURFACE_CONTAINER_LOW),
+            blur=ft.Blur(18, 18), border=ft.Border(right=ft.BorderSide(1, op(0.10, ft.Colors.ON_SURFACE))),
+            content=ft.Column(spacing=4, controls=[
                 ft.Container(content=brand, padding=ft.Padding(2, 0, 0, 14)),
                 *self.nav_items, ft.Container(expand=True), self.collapse_btn]))
 
@@ -569,10 +569,10 @@ class PoseStudioApp:
         icon, sel_icon, label, _ = NAV[index]
         selected = index == self.tab
         collapsed = bool(self.settings["collapsed"])
-        icon_ctrl = ft.Icon(sel_icon if selected else icon, size=22,
+        icon_ctrl = ft.Icon(sel_icon if selected else icon, size=20,
                             color=self.c1 if selected else ft.Colors.ON_SURFACE_VARIANT,
                             animate_size=self._anim(200))
-        text_ctrl = ft.Text(label, size=14, weight=ft.FontWeight.W_700 if selected else ft.FontWeight.W_500,
+        text_ctrl = ft.Text(label, size=13, weight=ft.FontWeight.W_700 if selected else ft.FontWeight.W_500,
                             color=ft.Colors.ON_SURFACE if selected else ft.Colors.ON_SURFACE_VARIANT,
                             visible=not collapsed)
 
@@ -581,17 +581,17 @@ class PoseStudioApp:
                 return
             hot = str(e.data).lower() == "true"
             e.control.bgcolor = op(0.08, ft.Colors.ON_SURFACE) if hot else None
-            e.control.scale = 1.03 if hot else 1
+            e.control.scale = 1.02 if hot else 1
             self._safe(e.control)
 
         return ft.Container(
             data=dict(icon=icon_ctrl, text=text_ctrl), tooltip=f"{label}  (Ctrl+{index + 1})",
-            padding=ft.Padding.symmetric(horizontal=14, vertical=13), border_radius=14,
-            bgcolor=op(0.16, self.c1) if selected else None,
+            padding=ft.Padding.symmetric(horizontal=12, vertical=10), border_radius=8,
+            bgcolor=op(0.14, self.c1) if selected else None,
             border=ft.Border(left=ft.BorderSide(3, self.c1 if selected else "transparent")),
-            animate=self._anim(240), animate_scale=self._anim(200),
+            animate=self._anim(200), animate_scale=self._anim(180),
             on_hover=on_hover, on_click=lambda e, i=index: self._goto(i),
-            content=ft.Row(spacing=14, controls=[icon_ctrl, text_ctrl]))
+            content=ft.Row(spacing=12, controls=[icon_ctrl, text_ctrl]))
 
     def _toggle_sidebar(self, e):
         self.settings["collapsed"] = not self.settings["collapsed"]
@@ -606,23 +606,23 @@ class PoseStudioApp:
 
     # --- шапка --------------------------------------------------------------
     def _build_header(self) -> ft.Container:
-        self.title_text = ft.Text(NAV[self.tab][2], size=26, weight=ft.FontWeight.W_800)
-        self.subtitle_text = ft.Text(NAV[self.tab][3], size=13, color=ft.Colors.ON_SURFACE_VARIANT)
+        self.title_text = ft.Text(NAV[self.tab][2], size=22, weight=ft.FontWeight.W_800)
+        self.subtitle_text = ft.Text(NAV[self.tab][3], size=12, color=ft.Colors.ON_SURFACE_VARIANT)
 
-        self.status_dot = ft.Container(width=10, height=10, border_radius=5, bgcolor="#64748b",
+        self.status_dot = ft.Container(width=8, height=8, border_radius=4, bgcolor="#64748b",
                                        animate=self._anim(500), animate_opacity=ft.Animation(900, ft.AnimationCurve.EASE_IN_OUT))
-        self.status_text = ft.Text("Зупинено", size=12, weight=ft.FontWeight.W_700)
+        self.status_text = ft.Text("Зупинено", size=11, weight=ft.FontWeight.W_700, font_family="Consolas")
         self.status_pill = ft.Container(
-            padding=ft.Padding.symmetric(horizontal=14, vertical=8), border_radius=20,
-            bgcolor=op(0.5, ft.Colors.SURFACE_CONTAINER), border=ft.Border.all(1, op(0.14, ft.Colors.ON_SURFACE)),
-            animate=self._anim(400),
-            content=ft.Row(tight=True, spacing=8, controls=[self.status_dot, self.status_text]))
+            padding=ft.Padding.symmetric(horizontal=12, vertical=6), border_radius=6,
+            bgcolor=op(0.5, ft.Colors.SURFACE_CONTAINER), border=ft.Border.all(1, op(0.12, ft.Colors.ON_SURFACE)),
+            animate=self._anim(300),
+            content=ft.Row(tight=True, spacing=6, controls=[self.status_dot, self.status_text]))
 
         self.theme_icon_switcher = ft.AnimatedSwitcher(
-            content=self._theme_icon(), transition=ft.AnimatedSwitcherTransition.ROTATION, duration=450)
+            content=self._theme_icon(), transition=ft.AnimatedSwitcherTransition.ROTATION, duration=350)
         theme_btn = ft.Container(
-            content=self.theme_icon_switcher, padding=11, border_radius=22, ink=True,
-            bgcolor=op(0.5, ft.Colors.SURFACE_CONTAINER), border=ft.Border.all(1, op(0.14, ft.Colors.ON_SURFACE)),
+            content=self.theme_icon_switcher, padding=9, border_radius=8, ink=True,
+            bgcolor=op(0.5, ft.Colors.SURFACE_CONTAINER), border=ft.Border.all(1, op(0.12, ft.Colors.ON_SURFACE)),
             tooltip="Світла / темна тема (Ctrl+T)", on_click=lambda e: self._set_mode("light" if self._is_dark() else "dark"))
 
         return ft.Container(
@@ -641,7 +641,7 @@ class PoseStudioApp:
         self.page.theme_mode = self._theme_mode()
         self.bg.gradient = ft.LinearGradient(begin=ft.Alignment.TOP_LEFT, end=ft.Alignment.BOTTOM_RIGHT,
                                              colors=self._bg_colors())
-        strength = 0.34 if self._is_dark() else 0.26
+        strength = 0.12 if self._is_dark() else 0.08
         for orb, color in zip(self.orbs, [self.c1, self.c2, "#38bdf8"]):
             orb.gradient = ft.RadialGradient(colors=[op(strength, color), op(0, color)])
         if self.theme_icon_switcher:
@@ -740,18 +740,18 @@ class PoseStudioApp:
                               on_change=lambda e: self._save_setting("flip_horizontal", bool(e.control.value)))
 
         hero = self._glass(
-            padding=26, radius=28, tint=self.c1,
+            padding=20, radius=10, tint=self.c1,
             content=ft.ResponsiveRow(
                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                spacing=24, run_spacing=20,
+                spacing=20, run_spacing=16,
                 controls=[
                     ft.Container(col={"xs": 12, "md": 4, "lg": 3}, content=power_stack, alignment=ft.Alignment.CENTER),
                     ft.Container(
                         col={"xs": 12, "md": 8, "lg": 9},
-                        content=ft.Column(spacing=10, controls=[
+                        content=ft.Column(spacing=8, controls=[
                             self.run_title, self.run_sub, self.uptime_text,
                             ft.Container(height=4), camera_seg,
-                            ft.Row(wrap=True, spacing=20, run_spacing=8, controls=[preview_sw, marks_sw, mirror_sw])
+                            ft.Row(wrap=True, spacing=16, run_spacing=8, controls=[preview_sw, marks_sw, mirror_sw])
                         ])
                     )
                 ]
@@ -759,7 +759,7 @@ class PoseStudioApp:
         )
 
         gestures = scan_gestures()
-        tiles = ft.ResponsiveRow(spacing=16, run_spacing=16, controls=[
+        tiles = ft.ResponsiveRow(spacing=14, run_spacing=14, controls=[
             self._stat_tile(ft.Icons.ACCOUNT_TREE, "Активні зв'язки", len(cfg.get("bindings", [])), self.c1),
             self._stat_tile(ft.Icons.CODE, "Модулі жестів (.py)", sum(g["kind"] == "py" for g in gestures), "#38bdf8"),
             self._stat_tile(ft.Icons.FIBER_SMART_RECORD, "Записані зразки", sum(g["kind"] == "json" for g in gestures), "#f59e0b"),
@@ -772,19 +772,19 @@ class PoseStudioApp:
             self.log_view.controls.append(ft.Text("Консоль порожня. Запустіть конвеєр, щоб побачити журнал...",
                                                   size=12, font_family="Consolas", color=ft.Colors.ON_SURFACE_VARIANT))
         console = self._glass(
-            hover=False, content=ft.Column(spacing=12, controls=[
+            hover=False, radius=10, content=ft.Column(spacing=10, controls=[
                 ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[
                     self._section_title("Консоль конвеєра", ft.Icons.TERMINAL, "Вивід процесу run.py у реальному часі"),
                     ft.IconButton(ft.Icons.DELETE_SWEEP, tooltip="Очистити консоль", on_click=self._clear_log)]),
-                ft.Container(height=250, padding=14, border_radius=16, bgcolor=op(0.42, "#000000"),
+                ft.Container(height=240, padding=12, border_radius=8, bgcolor=op(0.42, "#000000"),
                              border=ft.Border.all(1, op(0.1, ft.Colors.ON_SURFACE)), content=self.log_view)]))
 
         return self._view([hero, tiles, console])
 
     def _stat_tile(self, icon, label: str, value: int, color: str) -> ft.Control:
-        number = ft.Text("0", size=30, weight=ft.FontWeight.W_800)
+        number = ft.Text("0", size=26, weight=ft.FontWeight.W_800, font_family="Consolas")
         tile = self._glass(
-            tint=color, padding=18, col={"xs": 6, "md": 3},
+            tint=color, padding=14, radius=10, col={"xs": 6, "md": 3},
             content=ft.Row(spacing=14, controls=[
                 self._icon_badge(icon, color), ft.Column(spacing=0, tight=True, controls=[
                     number, ft.Text(label, size=12, color=ft.Colors.ON_SURFACE_VARIANT)])]))
@@ -1001,7 +1001,7 @@ class PoseStudioApp:
 
         name_field = ft.TextField(
             label="Назва жесту (латиницею)", hint_text="fist_to_fingers, wave, volume_bar",
-            value=self.rec_name, prefix_icon=ft.Icons.LABEL_OUTLINE, border_radius=14,
+            value=self.rec_name, prefix_icon=ft.Icons.LABEL_OUTLINE, border_radius=8,
             on_change=lambda e: setattr(self, "rec_name", e.control.value), on_submit=self._on_record_click)
         self.rec_name_field = name_field
 
@@ -1014,51 +1014,51 @@ class PoseStudioApp:
         self.rec_btn.opacity = 0.5 if recording else 1
 
         left = self._glass(
-            hover=False, col={"xs": 12, "lg": 7},
+            hover=False, radius=10, col={"xs": 12, "lg": 7},
             content=ft.Column(spacing=14, controls=[
                 self._section_title("1. Оберіть характер руху", ft.Icons.CATEGORY, "Шість фундаментальних парадигм"), grid]))
 
         right = self._glass(
-            hover=False, col={"xs": 12, "lg": 5},
-            content=ft.Column(spacing=16, controls=[
+            hover=False, radius=10, col={"xs": 12, "lg": 5},
+            content=ft.Column(spacing=14, controls=[
                 self._section_title("2. Налаштуйте і запишіть", ft.Icons.TUNE, "Параметри передаються рекордеру автоматично"),
                 name_field,
                 ft.Text("Частина тіла для відстеження", size=12, color=ft.Colors.ON_SURFACE_VARIANT),
                 model_seg, self.rec_params_switcher,
                 ft.Row(spacing=12, controls=[self.rec_btn, self.rec_ring]),
                 self.rec_status,
-                self._glass(hover=False, blur=False, padding=12, radius=14, content=ft.Row(spacing=10, controls=[
-                    ft.Icon(ft.Icons.KEYBOARD, size=18, color=self.c1),
-                    ft.Text("У вікні камери: ПРОБІЛ — зйомка, ESC / Q — скасування.", size=12,
+                self._glass(hover=False, blur=False, padding=10, radius=8, content=ft.Row(spacing=10, controls=[
+                    ft.Icon(ft.Icons.KEYBOARD, size=16, color=self.c1),
+                    ft.Text("У вікні камери: ПРОБІЛ — зйомка, ESC / Q — скасування.", size=11,
                             color=ft.Colors.ON_SURFACE_VARIANT, expand=True)]))]))
 
-        return self._view([ft.ResponsiveRow(spacing=18, run_spacing=18, controls=[left, right])])
+        return self._view([ft.ResponsiveRow(spacing=16, run_spacing=16, controls=[left, right])])
 
     def _paradigm_card(self, p: Dict[str, Any]) -> ft.Container:
         selected = p["type"] == self.rec_type
-        check = ft.Icon(ft.Icons.CHECK_CIRCLE, color=p["color"], size=22, scale=1 if selected else 0,
-                        animate_scale=ft.Animation(350, ft.AnimationCurve.EASE_OUT_BACK))
+        check = ft.Icon(ft.Icons.CHECK_CIRCLE, color=p["color"], size=20, scale=1 if selected else 0,
+                        animate_scale=ft.Animation(300, ft.AnimationCurve.EASE_OUT))
 
         def on_hover(e):
             if p["type"] == self.rec_type:
                 return
             hot = str(e.data).lower() == "true"
-            e.control.offset = ft.Offset(0, -0.015) if hot else ft.Offset(0, 0)
-            e.control.border = ft.Border.all(1, op(0.5, p["color"]) if hot else op(0.14, ft.Colors.ON_SURFACE))
+            e.control.offset = ft.Offset(0, -0.010) if hot else ft.Offset(0, 0)
+            e.control.border = ft.Border.all(1, op(0.4, p["color"]) if hot else op(0.12, ft.Colors.ON_SURFACE))
             self._safe(e.control)
 
         card = ft.Container(
-            col={"xs": 12, "sm": 6, "xl": 4}, padding=14, border_radius=18, data=dict(check=check),
-            bgcolor=op(0.18 if selected else 0.35, p["color"] if selected else ft.Colors.SURFACE_CONTAINER_HIGH),
-            border=ft.Border.all(1.6 if selected else 1, p["color"] if selected else op(0.14, ft.Colors.ON_SURFACE)),
-            shadow=ft.BoxShadow(blur_radius=24, color=op(0.35, p["color"]), offset=ft.Offset(0, 8)) if selected else None,
+            col={"xs": 12, "sm": 6, "xl": 4}, padding=12, border_radius=8, data=dict(check=check),
+            bgcolor=op(0.16 if selected else 0.30, p["color"] if selected else ft.Colors.SURFACE_CONTAINER_HIGH),
+            border=ft.Border.all(1.4 if selected else 1, p["color"] if selected else op(0.12, ft.Colors.ON_SURFACE)),
+            shadow=ft.BoxShadow(blur_radius=12, color=op(0.24, p["color"]), offset=ft.Offset(0, 3)) if selected else None,
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
-            animate=self._anim(280), animate_offset=self._anim(220, ft.AnimationCurve.EASE_OUT_CUBIC),
+            animate=self._anim(200), animate_offset=self._anim(180, ft.AnimationCurve.EASE_OUT_CUBIC),
             on_hover=on_hover if self.animations else None, on_click=lambda e, t=p["type"]: self._select_paradigm(t),
-            content=ft.Column(spacing=8, controls=[
-                ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[self._icon_badge(p["icon"], p["color"], 42, 22), check]),
-                ft.Text(f"{p['choice']}. {p['title']}", size=14, weight=ft.FontWeight.W_700),
-                ft.Text(p["desc"], size=11.5, color=ft.Colors.ON_SURFACE_VARIANT)]))
+            content=ft.Column(spacing=6, controls=[
+                ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[self._icon_badge(p["icon"], p["color"], 36, 18), check]),
+                ft.Text(f"{p['choice']}. {p['title']}", size=13, weight=ft.FontWeight.W_700),
+                ft.Text(p["desc"], size=11, color=ft.Colors.ON_SURFACE_VARIANT)]))
         return card
 
     def _select_paradigm(self, ptype: str):
@@ -1066,9 +1066,9 @@ class PoseStudioApp:
         for t, card in self.rec_cards.items():
             p = PARADIGM_BY_TYPE[t]
             sel = t == ptype
-            card.bgcolor = op(0.18 if sel else 0.35, p["color"] if sel else ft.Colors.SURFACE_CONTAINER_HIGH)
-            card.border = ft.Border.all(1.6 if sel else 1, p["color"] if sel else op(0.14, ft.Colors.ON_SURFACE))
-            card.shadow = ft.BoxShadow(blur_radius=24, color=op(0.35, p["color"]), offset=ft.Offset(0, 8)) if sel else None
+            card.bgcolor = op(0.16 if sel else 0.30, p["color"] if sel else ft.Colors.SURFACE_CONTAINER_HIGH)
+            card.border = ft.Border.all(1.4 if sel else 1, p["color"] if sel else op(0.12, ft.Colors.ON_SURFACE))
+            card.shadow = ft.BoxShadow(blur_radius=12, color=op(0.24, p["color"]), offset=ft.Offset(0, 3)) if sel else None
             card.scale = 1
             card.data["check"].scale = 1 if sel else 0
         if self.rec_params_switcher is not None:
@@ -1090,15 +1090,32 @@ class PoseStudioApp:
                 ft.Text(title, size=12, color=ft.Colors.ON_SURFACE_VARIANT), value_text]),
             ft.Slider(min=lo, max=hi, divisions=div, value=value, on_change=change)])
 
+    def _hint(self, text: str) -> ft.Control:
+        return ft.Container(
+            padding=ft.Padding.symmetric(horizontal=10, vertical=8), border_radius=6,
+            bgcolor=op(0.06, ft.Colors.ON_SURFACE), border=ft.Border(left=ft.BorderSide(3, self.c1)),
+            content=ft.Text(text, size=12, color=ft.Colors.ON_SURFACE_VARIANT))
+
     def _rec_params_panel(self) -> ft.Control:
         t = self.rec_type
         rows: List[ft.Control] = []
         if t in ("static", "trajectory", "transition", "hold"):
             rows.append(self._slider_row("Поріг схожості", "threshold", 0.5, 0.95, 9))
+        if t == "static":
+            rows.append(self._hint("Як це працює: ви показуєте позу в камеру, система запам'ятовує положення "
+                                   "точок. Жест спрацьовує, коли поточна поза схожа на еталон не менше за поріг."))
+        if t == "trajectory":
+            rows.append(self._slider_row("Час виконання руху", "traj_time", 0.4, 3.0, 26, " с"))
+            rows.append(self._hint("Натисніть ПРОБІЛ і проведіть рукою за вказаний час — це еталонна траєкторія. "
+                                   "Під час роботи порівнюється рух за останні N секунд. Швидкий жест — менший час, "
+                                   "повільне коло — більший."))
         if t == "transition":
             rows.append(self._slider_row("Макс. час перетворення А → Б", "trans_time", 0.3, 2.0, 17, " с"))
+            rows.append(self._hint("Записуються дві пози. Жест спрацьовує, якщо після пози А за вказаний час "
+                                   "з'явилась поза Б (кулак → розкриті пальці)."))
         if t == "hold":
             rows.append(self._slider_row("Час утримання", "hold_seconds", 0.5, 5.0, 9, " с"))
+            rows.append(self._hint("Тримайте позу без зміни вказаний час — заповниться смуга прогресу і жест спрацює."))
         if t == "periodic":
             rows.append(ft.Text("Вісь коливань", size=12, color=ft.Colors.ON_SURFACE_VARIANT))
             rows.append(ft.SegmentedButton(
@@ -1107,6 +1124,11 @@ class PoseStudioApp:
                           ft.Segment(value="2", label=ft.Text("Вертикально"), icon=ft.Icon(ft.Icons.SWAP_VERT, size=18))],
                 on_change=lambda e: self.rec_params.__setitem__("axis_choice", list(e.control.selected)[0])))
             rows.append(self._slider_row("Кількість змін напрямку", "min_cycles", 2, 8, 6, "", as_int=True))
+            rows.append(self._slider_row("Час на виконання руху", "period_window", 0.4, 4.0, 36, " с"))
+            rows.append(self._slider_row("Мін. розмах руху (частка кадру)", "min_amplitude", 0.03, 0.30, 27))
+            rows.append(self._hint("Еталон не записується: система рахує, скільки разів рука змінила напрямок "
+                                   "по обраній осі за вказаний час із достатнім розмахом. Помахайте рукою — "
+                                   "спрацює, коли набереться потрібна кількість змін."))
         if t == "slider":
             rows.append(ft.Text("Що керує повзунком", size=12, color=ft.Colors.ON_SURFACE_VARIANT))
             rows.append(ft.SegmentedButton(
@@ -1115,14 +1137,14 @@ class PoseStudioApp:
                           ft.Segment(value="2", label=ft.Text("Горизонталь")),
                           ft.Segment(value="3", label=ft.Text("Щипок"))],
                 on_change=lambda e: self.rec_params.__setitem__("slider_choice", list(e.control.selected)[0])))
-        if t == "trajectory":
-            rows.append(ft.Text("Рух записується 1 секунду після натискання ПРОБІЛ.", size=12,
-                                color=ft.Colors.ON_SURFACE_VARIANT))
+            rows.append(self._hint("Не жест, а регулятор: положення руки (висота / ліво-право) або відстань між "
+                                   "великим і вказівним пальцями перетворюється на значення 0–100%. Запис не потрібен — "
+                                   "зв'яжіть його в «Зв'язках» з дією «Аналоговий індикатор»."))
         info = PARADIGM_BY_TYPE[t]
         return ft.Container(
-            key=f"params_{t}", padding=14, border_radius=16, bgcolor=op(0.1, info["color"]),
+            key=f"params_{t}", padding=14, border_radius=8, bgcolor=op(0.08, info["color"]),
             border=ft.Border.all(1, op(0.3, info["color"])),
-            content=ft.Column(spacing=8, controls=[
+            content=ft.Column(spacing=10, controls=[
                 ft.Row(spacing=8, controls=[ft.Icon(info["icon"], color=info["color"], size=18),
                                             ft.Text(info["title"], size=13, weight=ft.FontWeight.W_700)]), *rows]))
 
@@ -1132,7 +1154,9 @@ class PoseStudioApp:
         return dict(
             name=name, gesture_choice=PARADIGM_BY_TYPE[self.rec_type]["choice"], model_choice=model_choice,
             threshold=pr["threshold"], trans_time=pr["trans_time"], hold_seconds=pr["hold_seconds"],
-            min_cycles=pr["min_cycles"], axis_choice=pr["axis_choice"], slider_choice=pr["slider_choice"])
+            min_cycles=pr["min_cycles"], axis_choice=pr["axis_choice"], slider_choice=pr["slider_choice"],
+            traj_time=pr.get("traj_time", 1.0), period_window=pr.get("period_window", 1.0),
+            min_amplitude=pr.get("min_amplitude", 0.09))
 
     def _on_record_click(self, e):
         if self.rec_proc is not None and self.rec_proc.poll() is None:
@@ -1197,7 +1221,7 @@ class PoseStudioApp:
     # ==================================================================
     def _view_library(self) -> ft.Column:
         search = ft.TextField(
-            hint_text="Пошук жесту…", prefix_icon=ft.Icons.SEARCH, border_radius=16, expand=True, value=self.lib_query,
+            hint_text="Пошук жесту…", prefix_icon=ft.Icons.SEARCH, border_radius=8, expand=True, value=self.lib_query,
             on_change=self._on_lib_search)
         flt = ft.SegmentedButton(
             selected=[self.lib_filter], allow_empty_selection=False,
@@ -1311,10 +1335,10 @@ class PoseStudioApp:
             controls=[title_ctrl, sub, pills_row])
 
         return self._glass(
-            tint=tint, blur=False, padding=ft.Padding.symmetric(horizontal=16, vertical=14), radius=18,
-            animate_opacity=ft.Animation(300, ft.AnimationCurve.EASE_OUT),
+            tint=tint, blur=False, padding=ft.Padding.symmetric(horizontal=14, vertical=10), radius=8,
+            animate_opacity=ft.Animation(250, ft.AnimationCurve.EASE_OUT),
             content=ft.Row(
-                spacing=14, vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=12, vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 controls=[badge, info_col, actions]))
 
     # ------------------------------------------------------------------
@@ -1445,19 +1469,19 @@ class PoseStudioApp:
             self.bld["action"] = actions[0]["path"] if actions else None
 
         g_dd = ft.Dropdown(
-            label="Жест (тригер)", value=self.bld["gesture"], border_radius=14, expand=True,
+            label="Жест (тригер)", value=self.bld["gesture"], border_radius=8, expand=True,
             options=[ft.dropdown.Option(key=g["path"], text=("[PY] " if g["kind"] == "py" else "[ЗРАЗОК] ") + g["name"]) for g in gestures],
             on_select=lambda e: self._on_bld("gesture", e.control.value))
         a_dd = ft.Dropdown(
-            label="Дія", value=self.bld["action"], border_radius=14, expand=True,
+            label="Дія", value=self.bld["action"], border_radius=8, expand=True,
             options=[ft.dropdown.Option(key=a["path"], text=a["label"]) for a in actions],
             on_select=lambda e: self._on_bld("action", e.control.value))
         self.key_field = ft.TextField(
-            label="Клавіша клавіатури", value=self.bld["key"], prefix_icon=ft.Icons.KEYBOARD, border_radius=14,
+            label="Клавіша клавіатури", value=self.bld["key"], prefix_icon=ft.Icons.KEYBOARD, border_radius=8,
             hint_text="space, enter, up, down, w, a, s, d…", on_change=lambda e: self._on_bld("key", e.control.value))
         self.key_field.visible = "keyboard" in str(self.bld["action"])
 
-        cd_text = ft.Text(f"{self.bld['cooldown']:g} с", size=13, weight=ft.FontWeight.W_700, color=self.c1)
+        cd_text = ft.Text(f"{self.bld['cooldown']:g} с", size=13, weight=ft.FontWeight.W_700, color=self.c1, font_family="Consolas")
 
         def cd_change(e):
             self.bld["cooldown"] = round(e.control.value, 2)
@@ -1473,21 +1497,21 @@ class PoseStudioApp:
         self._refresh_flow(update=False)
 
         builder = self._glass(
-            hover=False, col={"xs": 12, "lg": 6},
-            content=ft.Column(spacing=16, controls=[
+            hover=False, radius=10, col={"xs": 12, "lg": 6},
+            content=ft.Column(spacing=14, controls=[
                 self._section_title("Нова зв'язка", ft.Icons.ADD_LINK, "Збережеться у pipeline.yaml"),
-                self._glass(hover=False, blur=False, radius=16, padding=14, content=self.flow_row),
+                self._glass(hover=False, blur=False, radius=8, padding=12, content=self.flow_row),
                 ft.Row(controls=[g_dd]), ft.Row(controls=[a_dd]), self.key_field, cooldown,
                 self._gradient_button("Зберегти зв'язку", ft.Icons.SAVE, self._save_binding)]))
 
         self.bind_list = ft.Column(spacing=10, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
         self._refresh_bindings(update=False)
         active = self._glass(
-            hover=False, col={"xs": 12, "lg": 6},
+            hover=False, radius=10, col={"xs": 12, "lg": 6},
             content=ft.Column(spacing=14, controls=[
                 self._section_title("Активні зв'язки", ft.Icons.HUB, "Саме вони запускаються конвеєром"), self.bind_list]))
 
-        return self._view([ft.ResponsiveRow(spacing=18, run_spacing=18, controls=[builder, active])])
+        return self._view([ft.ResponsiveRow(spacing=16, run_spacing=16, controls=[builder, active])])
 
     def _on_bld(self, key: str, value: Any):
         self.bld[key] = value
@@ -1533,8 +1557,8 @@ class PoseStudioApp:
                 controls=[ft.IconButton(ft.Icons.DELETE_OUTLINE, icon_color="#f87171", tooltip="Видалити зв'язку",
                                         on_click=lambda e, i=idx: self._delete_binding(i))])
             row = self._glass(
-                blur=False, radius=16, padding=ft.Padding.symmetric(horizontal=14, vertical=12),
-                animate_opacity=ft.Animation(300, ft.AnimationCurve.EASE_OUT),
+                blur=False, radius=8, padding=ft.Padding.symmetric(horizontal=12, vertical=10),
+                animate_opacity=ft.Animation(250, ft.AnimationCurve.EASE_OUT),
                 content=ft.Row(spacing=12, vertical_alignment=ft.CrossAxisAlignment.CENTER, controls=[
                     self._icon_badge(ft.Icons.HUB, self.c1, 38, 20),
                     ft.Column(expand=True, spacing=4, tight=True, controls=[

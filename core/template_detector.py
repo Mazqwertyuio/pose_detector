@@ -32,7 +32,7 @@ class TemplateGestureDetector:
         # Базові конфігурації
         self.threshold = float(user_config.get("threshold", template_data.get("threshold", 0.80)))
         self.tolerance = float(user_config.get("tolerance", template_data.get("tolerance", 0.32)))
-        self.time_window = float(user_config.get("time_window", template_data.get("time_window", 0.8)))
+        self.time_window = float(user_config.get("time_window", template_data.get("time_window", template_data.get("traj_time", 0.8))))
 
         # 1 & 2: Точки для static та trajectory
         raw_template = template_data.get("template_points", [])
@@ -43,13 +43,13 @@ class TemplateGestureDetector:
         raw_b = template_data.get("pose_b", [])
         self.pose_a = np.array(raw_a, dtype=np.float32) if len(raw_a) > 0 else np.array([])
         self.pose_b = np.array(raw_b, dtype=np.float32) if len(raw_b) > 0 else np.array([])
-        self.transition_max_time = float(template_data.get("transition_max_time", 1.0))
+        self.transition_max_time = float(user_config.get("transition_max_time", template_data.get("transition_max_time", 1.0)))
         self.last_pose_a_time = 0.0
 
         # 4: Циклічний рух (Periodic)
         self.periodic_axis = template_data.get("axis", "x").lower()
-        self.min_cycles = int(template_data.get("min_cycles", 3))  # 3 зміни напрямку
-        self.min_amplitude = float(template_data.get("min_amplitude", 0.10))
+        self.min_cycles = int(user_config.get("min_cycles", template_data.get("min_cycles", 3)))  # зміни напрямку
+        self.min_amplitude = float(user_config.get("min_amplitude", template_data.get("min_amplitude", 0.09)))
 
         # 5: Утримання (Hold)
         self.hold_duration = float(template_data.get("hold_duration", 1.2))

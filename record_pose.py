@@ -187,7 +187,9 @@ def record_pose_dialog(camera_id: int = 0, preset: Optional[Dict[str, Any]] = No
         # =================================================================
         elif gesture_type == "trajectory":
             thresh = float(_ask(preset, "threshold", "\nПоріг схожості траєкторії (за замовчуванням 0.78): ") or "0.78")
-            print("\n[Recorder] ТРАЄКТОРІЯ: Займіть початкову точку, тисніть SPACE і ведіть рукою 1 сек.")
+            traj_time = float(_ask(preset, "traj_time", "Час виконання руху, сек (за замовчуванням 1.0): ") or "1.0")
+            traj_time = max(0.3, min(traj_time, 4.0))
+            print(f"\n[Recorder] ТРАЄКТОРІЯ: Займіть початкову точку, тисніть SPACE і ведіть рукою {traj_time:g} сек.")
             trajectory_pts = []
             is_rec = False
             rec_start = 0.0
@@ -228,8 +230,8 @@ def record_pose_dialog(camera_id: int = 0, preset: Optional[Dict[str, Any]] = No
                     elapsed = now - rec_start
                     if primary_pt:
                         trajectory_pts.append(primary_pt)
-                    status = f"ВЕДІТЬ РУКОЮ! Залишилось: {max(0.0, 1.0 - elapsed):.1f}с"
-                    if elapsed >= 1.0:
+                    status = f"ВЕДІТЬ РУКОЮ! Залишилось: {max(0.0, traj_time - elapsed):.1f}с"
+                    if elapsed >= traj_time:
                         break
 
                 cv2.rectangle(frame, (0, 0), (w, 50), (20, 20, 20), -1)
@@ -249,7 +251,8 @@ def record_pose_dialog(camera_id: int = 0, preset: Optional[Dict[str, Any]] = No
                 return ""
             payload["threshold"] = thresh
             payload["tolerance"] = 0.30
-            payload["time_window"] = 0.8
+            payload["time_window"] = traj_time
+            payload["traj_time"] = traj_time
             payload["template_points"] = resampled.tolist()
 
         # =================================================================
@@ -287,11 +290,13 @@ def record_pose_dialog(camera_id: int = 0, preset: Optional[Dict[str, Any]] = No
             ax_choice = _ask(preset, "axis_choice", "Ваш вибір (1 або 2, за замовчуванням 1): ").strip()
             axis = "y" if ax_choice == "2" else "x"
             min_cycles = int(_ask(preset, "min_cycles", "Кількість змін напрямку (за замовчуванням 3): ") or "3")
+            period_window = float(_ask(preset, "period_window", "За який час виконати рух, сек (за замовчуванням 1.0): ") or "1.0")
+            amplitude = float(_ask(preset, "min_amplitude", "Мін. розмах руху, частка кадру (за замовчуванням 0.09): ") or "0.09")
 
             payload["axis"] = axis
             payload["min_cycles"] = min_cycles
-            payload["min_amplitude"] = 0.09
-            payload["time_window"] = 1.0
+            payload["min_amplitude"] = amplitude
+            payload["time_window"] = max(0.4, min(period_window, 5.0))
 
         # =================================================================
         # 5. УТРИМАННЯ ПОЗИ (HOLD)
